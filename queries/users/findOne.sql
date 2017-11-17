@@ -1,0 +1,1 @@
+SELECT email, first_name, last_name, permission FROM users WHERE id = ${id} LIMIT 1;

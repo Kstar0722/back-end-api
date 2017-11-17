@@ -1,0 +1,23 @@
+{
+  "name": "iifym-api",
+  "version": "1.0.0",
+  "description": "IIFYM API",
+  "main": "app.js",
+  "author": "",
+  "dependencies": {
+    "bcrypt": "^0.8.7",
+    "bluebird": "^3.4.6",
+    "body-parser": "^1.15.2",
+    "express": "^4.14.0",
+    "express-jwt": "^5.0.0",
+    "jsonwebtoken": "^7.1.9",
+    "pg": "^6.1.0",
+    "pg-promise": "^5.3.3",
+    "underscore": "^1.8.3"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "license": "ISC"
+}
