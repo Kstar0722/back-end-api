@@ -25,6 +25,22 @@ router.post(['/', '/create'], (req, res) => {
 	});
 });
 
+// PUT /, /edit
+router.put(['/', '/edit'], function(req, res) {
+	let query = _.map(req.body, (val, key) => {
+	    return `${key} = ` + '${' + key + '}'
+	}).join(', ');
+	req.app.get('db').one('UPDATE users SET ' + query + ' WHERE id = ${id} RETURNING email, password, first_name, last_name, permission;', _.extend(req.body, {
+		id: req.user.id
+	})).then((user) => {
+		return res.json({
+			user: user
+		});
+	}).catch(() => {
+		return res.status(500).json({});
+	});
+});
+
 // GET /current
 router.get('/current', function(req, res) {
 	req.app.get('db').one('SELECT email, first_name, last_name, permission FROM users WHERE id = ${id} LIMIT 1;', {

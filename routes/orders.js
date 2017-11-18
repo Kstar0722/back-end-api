@@ -8,9 +8,9 @@ let express = require('express'),
 router.post(['/', '/create'], function(req, res) {
 	req.app.get('db').one('INSERT INTO orders (customer, product, quantity) VALUES (${customer}, ${product}, ${quantity}) RETURNING *;', _.extend(req.body, {
     	customer: req.user.id
-    })).then((product) => {
+    })).then((order) => {
     	return res.status(201).json({
-    		product: product
+    		order: order
     	});
     }).catch((err) => {
     	return res.status(500).json({});
@@ -21,13 +21,27 @@ router.post(['/', '/create'], function(req, res) {
 router.get(['/', '/find'], function(req, res) {
 	req.app.get('db').manyOrNone('SELECT orders.id, products.name, orders.quantity, users.email, users.first_name, users.last_name, orders.created_at FROM orders INNER JOIN users ON orders.customer = users.id INNER JOIN products ON orders.product = products.id WHERE orders.customer = ${customer};', {
 		customer: req.user.id
-	}).then((products) => {
+	}).then((orders) => {
 		return res.json({
-			products: products
+			orders: orders
 		});
 	}).catch(() => {
 		return res.status(500).json({});
 	});
+});
+
+// GET /:id, /find/:id
+router.get(['/:id', '/find/:id'], function(req, res) {
+    req.app.get('db').oneOrNone('SELECT orders.id, products.name, orders.quantity, users.email, users.first_name, users.last_name, orders.created_at FROM orders INNER JOIN users ON orders.customer = users.id INNER JOIN products ON orders.product = products.id WHERE orders.customer = ${customer} AND orders.id = ${order};', {
+        customer: req.user.id,
+        order: req.params.id
+    }).then((order) => {
+        return res.json({
+            order: order
+        });
+    }).catch(() => {
+        return res.status(404).json({});
+    });
 });
 
 module.exports = router;
