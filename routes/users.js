@@ -43,10 +43,11 @@ router.post(['/', '/create'], (req, res) => {
 
 // PUT /, /edit
 router.put(['/', '/edit'], (req, res) => {
-	let query = _.map(req.body, (val, key) => {
+	req.body = _.omit(req.body, 'id', 'password', 'permission', 'created_at');
+	let updates = _.map(req.body, (val, key) => {
 	    return `${key} = ` + '${' + key + '}'
 	}).join(', ');
-	req.app.get('db').one('UPDATE users SET ' + query + ' WHERE id = ${id} RETURNING email, password, first_name, last_name, permission;', _.extend(req.body, {
+	req.app.get('db').one('UPDATE users SET ' + updates + ' WHERE id = ${id} RETURNING email, password, first_name, last_name, permission;', _.extend(req.body, {
 		id: req.user.id
 	})).then((user) => {
 		return res.json({

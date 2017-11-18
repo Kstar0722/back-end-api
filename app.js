@@ -40,7 +40,7 @@ app.use(jwt({
         }
     ]
 }));
-Object.keys(routes).forEach(function(route) {
+Object.keys(routes).forEach((route) => {
     router.use(`/${route}`, routes[route]);
 });
 app.use(router);
