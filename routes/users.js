@@ -4,25 +4,13 @@ let express = require('express'),
     router = express.Router(),
     bcrypt = require('bcrypt'),
     path = require('path'),
-    _ = require('underscore'),
-    validator = require('validator');
+    _ = require('underscore');
 
 // POST /, /create
 router.post(['/', '/create'], (req, res) => {
-	if(!validator.isEmail(req.body.email)) {
-		return res.status(400).json({
-			error: {
-				message: 'Email must be valid'
-			}
-		});
-	}
 	bcrypt.hash(req.body.password, 12, (err, hash) => {
 		if(err) {
-			return res.status(500).json({
-	    		error: {
-	    			message: 'Server error occurred'
-	    		}
-	    	});
+			return res.status(500).json({});
 		}
 		req.app.get('db').one('INSERT INTO users (email, password, first_name, last_name, permission) VALUES (${email}, ${password}, ${first_name}, ${last_name}, ${permission}) RETURNING email, first_name, last_name, permission;', _.extend(req.body, {
 	    	password: hash,
@@ -32,50 +20,35 @@ router.post(['/', '/create'], (req, res) => {
 	    		user: user
 	    	});
 	    }).catch((err) => {
-	    	return res.status(400).json({
-	            error: {
-	                message: err.message
-	            }
-	        });
+	    	return res.status(500).json({});
 	    });
 	});
 });
 
 // PUT /, /edit
-router.put(['/', '/edit'], (req, res) => {
-	req.body = _.omit(req.body, 'id', 'password', 'permission', 'created_at');
-	let updates = _.map(req.body, (val, key) => {
+router.put(['/', '/edit'], function(req, res) {
+	let query = _.map(req.body, (val, key) => {
 	    return `${key} = ` + '${' + key + '}'
 	}).join(', ');
-	req.app.get('db').one('UPDATE users SET ' + updates + ' WHERE id = ${id} RETURNING email, password, first_name, last_name, permission;', _.extend(req.body, {
+	req.app.get('db').one('UPDATE users SET ' + query + ' WHERE id = ${id} RETURNING email, password, first_name, last_name, permission;', _.extend(req.body, {
 		id: req.user.id
 	})).then((user) => {
 		return res.json({
 			user: user
 		});
 	}).catch(() => {
-		return res.status(500).json({
-    		error: {
-    			message: 'Server error occurred'
-    		}
-    	});
+		return res.status(500).json({});
 	});
 });
 
 // GET /current
-router.get('/current', (req, res) => {
+router.get('/current', function(req, res) {
 	req.app.get('db').one('SELECT email, first_name, last_name, permission FROM users WHERE id = ${id} LIMIT 1;', {
     	id: req.user.id
     }).then((user) => {
-    	return res.json({
-    		user: user
-    	});
+    	return res.json(user);
     }).catch((err) => {
-    	return res.status(500).json({
-    		error: {
-    			message: 'Server error occurred'
-    		}
-    	});
+    	return res.status(500).json({});
     });
 });
 
