@@ -5,29 +5,55 @@ let express = require('express'),
     _ = require('underscore');
 
 // POST /, /create
-router.post(['/', '/create'], function(req, res) {
+router.post(['/', '/create'], (req, res) => {
 	req.app.get('db').one('INSERT INTO orders (customer, product, quantity) VALUES (${customer}, ${product}, ${quantity}) RETURNING *;', _.extend(req.body, {
     	customer: req.user.id
-    })).then((product) => {
+    })).then((order) => {
     	return res.status(201).json({
-    		product: product
+    		order: order
     	});
     }).catch((err) => {
-    	return res.status(500).json({});
+    	return res.status(400).json({
+            error: {
+                message: err.message
+            }
+        });
     });
 });
 
 // GET /, /find
-router.get(['/', '/find'], function(req, res) {
+router.get(['/', '/find'], (req, res) => {
 	req.app.get('db').manyOrNone('SELECT orders.id, products.name, orders.quantity, users.email, users.first_name, users.last_name, orders.created_at FROM orders INNER JOIN users ON orders.customer = users.id INNER JOIN products ON orders.product = products.id WHERE orders.customer = ${customer};', {
 		customer: req.user.id
-	}).then((products) => {
+	}).then((orders) => {
 		return res.json({
-			products: products
+			orders: orders
 		});
 	}).catch(() => {
-		return res.status(500).json({});
+		return res.status(500).json({
+            error: {
+                message: 'Server error occurred'
+            }
+        });
 	});
+});
+
+// GET /:id, /find/:id
+router.get(['/:id', '/find/:id'], (req, res) => {
+    req.app.get('db').oneOrNone('SELECT orders.id, products.name, orders.quantity, users.email, users.first_name, users.last_name, orders.created_at FROM orders INNER JOIN users ON orders.customer = users.id INNER JOIN products ON orders.product = products.id WHERE orders.customer = ${customer} AND orders.id = ${order};', {
+        customer: req.user.id,
+        order: req.params.id
+    }).then((order) => {
+        return res.json({
+            order: order
+        });
+    }).catch(() => {
+        return res.status(500).json({
+            error: {
+                message: 'Server error occurred'
+            }
+        });
+    });
 });
 
 module.exports = router;

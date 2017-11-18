@@ -7,14 +7,17 @@ let express = require('express'),
     _ = require('underscore');
 
 // POST /
-router.post('/', function(req, res) {
+router.post('/', (req, res) => {
 	req.app.get('db').one('SELECT * FROM users WHERE email = ${email} LIMIT 1;', {
     	email: req.body.email
     }).then((user) => {
-    	bcrypt.compare(req.body.password, user.password, function(err, matches) {
+    	bcrypt.compare(req.body.password, user.password, (err, matches) => {
     		if(err) {
-    			console.log(err);
-    			return res.status(500).json({});
+    			return res.status(500).json({
+                    error: {
+                        message: 'Server error occurred'
+                    }
+                });
     		}
     		if(matches) {
     			user = _.omit(user, 'password');
@@ -24,12 +27,16 @@ router.post('/', function(req, res) {
     			});
     		} else {
     			return res.status(401).json({
-    				message: 'Unauthorized'
+    				message: 'Incorrect credentials'
     			});
     		}
     	});
     }).catch((err) => {
-    	return res.status(500).json({});
+    	return res.status(500).json({
+            error: {
+                message: 'Server error occurred'
+            }
+        });
     });
 });
 
