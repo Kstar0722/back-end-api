@@ -8,7 +8,7 @@ let express = require('express'),
 
 // POST /
 router.post('/', (req, res) => {
-	req.app.get('db').one('SELECT * FROM users WHERE email = ${email} LIMIT 1;', {
+	req.app.get('db').one(req.app.get('queries').users.findOne, {
     	email: req.body.email
     }).then((user) => {
     	bcrypt.compare(req.body.password, user.password, (err, matches) => {

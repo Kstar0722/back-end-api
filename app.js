@@ -17,10 +17,12 @@ let express = require('express'),
         database: config.db.name,
         user: config.db.user,
         password: config.db.pass
-    });
+    }),
+    queries = require('./queries')(pgp);
 
 app.set('pgp', pgp);
 app.set('db', db);
+app.set('queries', queries);
 app.use(bodyParser.json());
 app.use(jwt({
     secret: process.env.TOKEN_SECRET || 'secret'
@@ -37,6 +39,10 @@ app.use(jwt({
         {
             url: '/users/create',
             methods: ['POST']
+        },
+        {
+            url: '/orders/samcart',
+            methods: ['POST']
         }
     ]
 }));
@@ -44,13 +50,11 @@ Object.keys(routes).forEach((route) => {
     router.use(`/${route}`, routes[route]);
 });
 app.use(router);
-db.none(pgp.QueryFile(path.join(__dirname, 'queries', 'tables.sql'), {
-    minify: true
-})).then(() => {
+db.none(app.get('queries').tables).then(() => {
     let listener = app.listen(process.env.PORT || 3000, () => {
         let address = listener.address();
         console.info(`Started server on ${address.address}${address.port}!`);
     });
-}).catch(() => {
-    console.error('Error initializing tables.');
+}).catch((err) => {
+    console.error(err);
 });
