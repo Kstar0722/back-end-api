@@ -1,0 +1,1 @@
+INSERT INTO info (key, value) VALUES (${key}, ${value});

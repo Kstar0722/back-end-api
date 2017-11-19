@@ -29,3 +29,14 @@ CREATE TABLE IF NOT EXISTS results (
 	customer INTEGER REFERENCES users(id) NOT NULL,
 	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS infos (
+	id SERIAL PRIMARY KEY,
+	customer INTEGER REFERENCES users(id) NOT NULL,
+	key VARCHAR(512) NOT NULL,
+	value VARCHAR(2048) NOT NULL,
+	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+-- TODO: create index only if it does not exist
+-- CREATE INDEX info_key ON info(key);

@@ -76,7 +76,7 @@ router.post('/samcart', (req, res) => {
             fs.readFile(path.join(__dirname, '..', 'templates', 'samcart.html'), (err, data) => {
                 mailgun.messages().send({
                     from: 'IIFYM <accounts@iifym.com>',
-                    to: 'alekcei.glazunov@gmail.com',
+                    to: req.body.customer.email,
                     subject: 'Your IIFYM Account',
                     html: require('util').format(data.toString(), req.body.customer.email, password)
                 }, (err, body) => {
