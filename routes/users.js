@@ -3,7 +3,6 @@
 let express = require('express'),
     router = express.Router(),
     bcrypt = require('bcrypt'),
-    path = require('path'),
     _ = require('underscore'),
     validator = require('validator');
 

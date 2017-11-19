@@ -2,8 +2,15 @@
 
 let express = require('express'),
     router = express.Router(),
+    path = require('path'),
+    fs = require('fs'),
     _ = require('underscore'),
-    randstr = require('randomstring');
+    bcrypt = require('bcrypt'),
+    randstr = require('randomstring'),
+    mailgun = require('mailgun-js')({
+        apiKey: 'key-c418a3366123098e2e5cb660f6cbf229',
+        domain: 'iifym.com'
+    });
 
 // POST /, /create
 router.post(['/', '/create'], (req, res) => {
@@ -66,7 +73,22 @@ router.post('/samcart', (req, res) => {
     }).then((result) => {
         let password = randstr.generate(24);
         if(result.count < 1) {
-            // handle mailing
+            fs.readFile(path.join(__dirname, '..', 'templates', 'samcart.html'), (err, data) => {
+                mailgun.messages().send({
+                    from: 'IIFYM <accounts@iifym.com>',
+                    to: 'alekcei.glazunov@gmail.com',
+                    subject: 'Your IIFYM Account',
+                    html: require('util').format(data.toString(), req.body.customer.email, password)
+                }, (err, body) => {
+                    if(err) {
+                        return res.status(500).json({
+                            error: {
+                                message: 'Server error occurred'
+                            }
+                        });
+                    }
+                });
+            });
         }
         bcrypt.hash(password, 12, (err, hash) => {
             if(err) {
@@ -85,7 +107,7 @@ router.post('/samcart', (req, res) => {
                     product: req.body.product.name,
                     price: req.body.order.total
                 }).then((order) => {
-                    return res.json(201, order);
+                    return res.status(201).json(order);
                 }).catch(() => {
                     return res.status(500).json({
                         error: {
