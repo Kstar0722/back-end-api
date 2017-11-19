@@ -1,43 +1,50 @@
 'use strict';
 
 let express = require('express'),
-    router = express.Router(),
-    bcrypt = require('bcrypt'),
-    jwt = require('jsonwebtoken'),
-    _ = require('underscore');
+  router = express.Router(),
+  bcrypt = require('bcrypt'),
+  jwt = require('jsonwebtoken'),
+  _ = require('underscore'),
+  config = require('../config'),
+  User = require('../models/User');
 
 // POST /
 router.post('/', (req, res) => {
-	req.app.get('db').one(req.app.get('queries').users.findOne, {
-    	email: req.body.email
-    }).then((user) => {
-    	bcrypt.compare(req.body.password, user.password, (err, matches) => {
-    		if(err) {
-    			return res.status(500).json({
-                    error: {
-                        message: 'Server error occurred'
-                    }
-                });
-    		}
-    		if(matches) {
-    			user = _.omit(user, 'password');
-    			return res.json({
-    				key: jwt.sign(user, 'secret'),
-    				user: user
-    			});
-    		} else {
-    			return res.status(401).json({
-    				message: 'Incorrect credentials'
-    			});
-    		}
-    	});
-    }).catch((err) => {
-    	return res.status(500).json({
-            error: {
-                message: 'Server error occurred'
-            }
+  User.where({
+    email: req.body.email || req.body.username
+  }).fetch().then((user) => {
+    if(user === null) {
+      return res.status(401).json({
+        message: 'Incorrect credentials'
+      });
+    }
+    user = user.toJSON();
+    bcrypt.compare(req.body.password, user.password, (err, matches) => {
+      if(err) {
+        return res.status(500).json({
+          message: 'Server error occurred'
         });
+      }
+      if(matches) {
+        return res.json({
+          access_token: jwt.sign({
+            id: user.id
+          }, config.token_secret),
+          user: {
+            id: user.id
+          }
+        });
+      } else {
+        return res.status(401).json({
+          message: 'Incorrect credentials'
+        });
+      }
     });
+  }).catch(() => {
+    return res.status(500).json({
+      message: 'Server error occurred'
+    });
+  });
 });
 
 module.exports = router;

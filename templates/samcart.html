@@ -1,0 +1,58 @@
+<!DOCTYPE HTML>
+<head>
+  <style>
+    html, body {
+      background: #ccc;
+      margin: 0 auto;
+    }
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+    .header {
+      background: white;
+      padding: 20px 0;
+      box-shadow: 0 0 20px rgba(50, 50, 50, 0.2);
+      z-index: 99;
+      border-bottom: 1px solid rgba(50, 50, 50, 0.2);
+      box-sizing: border-box;
+      position: relative;
+    }
+    .content {
+      background: white;
+      z-index: 98;
+      font: 14px Arial, Helvetica, sans-serif;
+      box-sizing: border-box;
+      padding: 20px;
+      color: black;
+    }
+    .content p {
+      margin: 0;
+      padding: 6px 0;
+    }
+    .content p a, .content b, .content b a {
+      color: #d53333;
+    }
+  </style>
+</head>
+<html>
+  <body>
+    <header class="header">
+      <div class="container">
+        <a href="http://www.iifym.com/">
+          <img src="http://www.iifym.com/wp-content/themes/iifym/images/comp/logo.jpg">
+        </a>
+      </div>
+    </header>
+    <div class="content container">
+      <p>Thank you for looking into our product! We've taken the liberty of signing you up for our site.</p>
+      <p>
+        <div>Email: <b>%s</b></div>
+        <div>Password: <b>%s</b></div>
+      </p>
+      <p>
+        Login at <a href="http://www.iifym.com/">iifym.com</a>.
+      </p>
+    </div>
+  </body>
+</html>
