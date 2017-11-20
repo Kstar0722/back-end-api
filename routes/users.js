@@ -41,6 +41,7 @@ router.post(['/', '/create'], (req, res) => {
   });
 });
 
+// GET /:id, /find/:id
 router.get(['/:id', '/find/:id'], (req, res) => {
   new User('id', req.params.id).fetch({
     withRelated: ['orders']
