@@ -1,0 +1,53 @@
+<html>
+  <head>
+    <style>
+      html, body {
+        margin: 0;
+        height: 100%;
+        background: lightgrey;
+      }
+
+      .container {
+        max-width: 480px;
+        margin: 0 auto;
+        height: 100%;
+        background: white;
+        box-shadow: 0 0 15px grey;
+      }
+
+      .container .inner {
+        padding: 8px 12px;
+      }
+
+      .container .inner .row {
+        display: block;
+        font: 14px 'Helvetica', sans-serif;
+      }
+
+      .container .inner .row .title {
+        margin: 0;
+        border-bottom: 1px solid grey;
+        padding: 0 0 10px 0;
+      }
+
+      .container .inner .results {
+        list-style-type: none;
+        padding: 0;
+      }
+
+      .container .inner .results .info {
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="container">
+      <div class="inner">
+        <div class="row">
+          <h1 class="title">Your Results For %s</h1>
+        </div>
+        <ul class="results"></ul>
+      </div>
+    </main>
+  </body>
+</html>
