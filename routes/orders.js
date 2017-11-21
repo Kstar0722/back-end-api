@@ -7,7 +7,12 @@ let express = require('express'),
   _ = require('underscore'),
   JSONAPI = require('jsonapi-serializer'),
   Serializer = JSONAPI.Serializer,
-  Deserializer = JSONAPI.Deserializer;
+  Deserializer = JSONAPI.Deserializer,
+  randstr = require('randomstring'),
+  mailgun = require('mailgun-js')({
+    apiKey: process.env.MAILGUN_KEY,
+    domain: 'iifym.com'
+  });
 
 // POST /, /create
 router.post(['/', '/create'], (req, res) => {
@@ -27,9 +32,9 @@ router.post(['/', '/create'], (req, res) => {
 
 // GET /, /find
 router.get(['/', '/find'], (req, res) => {
-  new Order({
+  new Order().where(_.extend(req.query, {
     customer: req.user.id
-  }).fetchAll({
+  })).fetchAll({
     withRelated: ['user']
   }).then((orders) => {
     return res.json(new Serializer('order', {

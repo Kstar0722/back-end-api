@@ -26,6 +26,7 @@
   "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node app.js",
     "prestart": "node ./node_modules/knex/bin/cli.js migrate:latest"
   },
   "license": "ISC"
