@@ -6,7 +6,7 @@ let express = require('express'),
   jwt = require('jsonwebtoken'),
   _ = require('underscore'),
   config = require('../config'),
-  User = require('../models/User');
+  User = require('../models/user');
 
 // POST /
 router.post('/', (req, res) => {
