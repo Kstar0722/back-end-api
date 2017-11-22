@@ -2,14 +2,14 @@
 
 let fs = require('fs'),
   path = require('path'),
-  routes = {},
+  models = {},
   name;
 
 fs.readdirSync(__dirname).filter((file) => {
   return file !== path.basename(__filename)
 }).forEach((file) => {
   name = path.parse(file).name;
-  routes[name] = require(`./${name}`);
+  models[name] = require(`./${name}`);
 });
 
-module.exports = routes;
+module.exports = models;
