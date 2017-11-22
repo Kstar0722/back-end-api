@@ -48,5 +48,5 @@ Object.keys(routes).forEach((route) => {
 app.use(router);
 let listener = app.listen(process.env.PORT || 3000, () => {
   let address = listener.address();
-  console.info(`Started server on ${address.address}${address.port}!`);
+  console.info(`Started server on ${address.address}${address.port} in ${proccess.env.NODE_ENV || 'development'}`);
 });
