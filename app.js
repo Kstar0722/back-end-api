@@ -1,60 +1,52 @@
 'use strict';
 
 let express = require('express'),
-    app = express(),
-    path = require('path'),
-    bodyParser = require('body-parser'),
-    router = express.Router(),
-    routes = require('./routes'),
-    jwt = require('express-jwt'),
-    config = require('./config'),
-    pgp = require('pg-promise')({
-        promiseLib: require('bluebird')
-    }),
-    db = pgp({
-        host: config.db.host,
-        port: config.db.port,
-        database: config.db.name,
-        user: config.db.user,
-        password: config.db.pass
-    }),
-    queries = require('./queries')(pgp);
+  app = express(),
+  path = require('path'),
+  bodyParser = require('body-parser'),
+  router = express.Router(),
+  routes = require('./routes'),
+  jwt = require('express-jwt'),
+  cors = require('cors'),
+  config = require('./config'),
+  database = require('./database');
 
-app.set('pgp', pgp);
-app.set('db', db);
-app.set('queries', queries);
-app.use(bodyParser.json());
+app.use(cors({
+  origin: true,
+  methods: ['GET', 'POST', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}));
+app.use(bodyParser.urlencoded({
+  extended: true,
+  type: 'application/x-www-form-urlencoded'
+}));
+app.use(bodyParser.json({
+  type: 'application/vnd.api+json'
+}));
+app.use(require('express-pdf'));
 app.use(jwt({
-    secret: process.env.TOKEN_SECRET || 'secret'
+  secret: config.token_secret
 }).unless({
-    path: [
-        {
-            url: '/auth',
-            methods: ['POST']
-        },
-        {
-            url: '/users',
-            methods: ['POST']
-        },
-        {
-            url: '/users/create',
-            methods: ['POST']
-        },
-        {
-            url: '/orders/samcart',
-            methods: ['POST']
-        }
-    ]
+  path: [{
+    url: '/auth',
+    methods: ['POST']
+  }, {
+    url: '/users',
+    methods: ['POST']
+  }, {
+    url: '/users/create',
+    methods: ['POST']
+  }, {
+    url: '/orders/samcart',
+    methods: ['POST']
+  }]
 }));
 Object.keys(routes).forEach((route) => {
-    router.use(`/${route}`, routes[route]);
+  router.use(`/${route}`, routes[route]);
 });
 app.use(router);
-db.none(app.get('queries').tables).then(() => {
-    let listener = app.listen(process.env.PORT || 3000, () => {
-        let address = listener.address();
-        console.info(`Started server on ${address.address}${address.port}!`);
-    });
-}).catch((err) => {
-    console.error(err);
+let listener = app.listen(process.env.PORT || 3000, () => {
+  let address = listener.address();
+  console.info(`Started server on ${address.address}${address.port} in ${proccess.env.NODE_ENV || 'development'}`);
 });
