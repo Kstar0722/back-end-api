@@ -17,7 +17,7 @@ router.post(['/', '/create'], (req, res) => {
     last_name: 'required',
     email: ['required', 'email'],
     password: 'required'
-  }).run(req.body).then((validated) => {
+  }).run(req.body).then(() => {
     bcrypt.hash(req.body.password, 12, (err, hash) => {
       if(err) {
         return res.status(500).json({

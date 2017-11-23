@@ -2,6 +2,8 @@ node_modules
 
 .idea
 
+*.log
+
 # Elastic Beanstalk Files
 
 .elasticbeanstalk/*
@@ -9,4 +11,3 @@ node_modules
 !.elasticbeanstalk/*.cfg.yml
 
 !.elasticbeanstalk/*.global.yml
-

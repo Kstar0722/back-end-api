@@ -22,7 +22,7 @@ app.use(bodyParser.urlencoded({
   type: 'application/x-www-form-urlencoded'
 }));
 app.use(bodyParser.json({
-  type: 'application/vnd.api+json'
+  type: 'application/*'
 }));
 app.use(require('express-pdf'));
 app.use(jwt({
@@ -48,5 +48,5 @@ Object.keys(routes).forEach((route) => {
 app.use(router);
 let listener = app.listen(process.env.PORT || 3000, () => {
   let address = listener.address();
-  console.info(`Started server on ${address.address}${address.port} in ${proccess.env.NODE_ENV || 'development'}`);
+  console.info(`Started server on ${address.address}${address.port} in ${process.env.NODE_ENV || 'development'}`);
 });
