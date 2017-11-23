@@ -12,9 +12,10 @@ let express = require('express'),
 // POST /
 router.post('/', (req, res) => {
   new CheckIt({
-    email: ['required', 'email'],
+    username: ['required', 'email'],
     password: 'required'
   }).run(req.body).then(() => {
+    console.info(`Attempting to authenticate ${req.body.email}`);
     User.where({
       email: req.body.email || req.body.username
     }).fetch().then((user) => {
@@ -51,7 +52,7 @@ router.post('/', (req, res) => {
       });
     });
   }).catch((err) => {
-    return res.status(401).json({
+    return res.status(400).json({
       message: 'Email and password must be present'
     });
   });
