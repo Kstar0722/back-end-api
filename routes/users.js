@@ -25,7 +25,7 @@ router.post(['/', '/create'], (req, res) => {
         });
       }
       req.body.password = hash;
-      new User(req.body).save().then((user) => {
+      User.forge(req.body).save().then((user) => {
         return res.json(new Serializer('user', {
           id: 'id',
           attributes: User.getAttributes(),
@@ -43,7 +43,9 @@ router.post(['/', '/create'], (req, res) => {
 
 // GET /:id, /find/:id
 router.get(['/:id', '/find/:id'], (req, res) => {
-  new User('id', req.params.id).fetch({
+  User.forge({
+    id: req.params.id
+  }).fetch({
     withRelated: ['orders']
   }).then((user) => {
     return res.json(new Serializer('user', {
