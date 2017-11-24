@@ -5,6 +5,7 @@ let express = require('express'),
   bcrypt = require('bcrypt'),
   _ = require('underscore'),
   User = require('../models').user,
+  Role = require('../models').role,
   Order = require('../models').order,
   CheckIt = require('checkit'),
   JSONAPI = require('jsonapi-serializer'),
@@ -46,17 +47,23 @@ router.get(['/:id', '/find/:id'], (req, res) => {
   User.forge({
     id: req.params.id
   }).fetch({
-    withRelated: ['orders']
+    withRelated: ['role', 'orders']
   }).then((user) => {
+    console.log(user.toJSON());
     return res.json(new Serializer('user', {
       id: 'id',
       attributes: _.omit(Object.keys(user.toJSON()), 'id'),
+      role: {
+        ref: 'id',
+        attributes: Role.getAttributes()
+      },
       orders: {
         ref: 'id',
         attributes: Order.getAttributes()
       }
     }).serialize(user.toJSON()));
-  }, () => {
+  }, (err) => {
+    console.error(err);
     return res.status(500).json({
       message: 'Server error occurred'
     });
