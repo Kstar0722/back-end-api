@@ -12,11 +12,12 @@ let express = require('express'),
   mailgun = require('mailgun-js')({
     apiKey: process.env.MAILGUN_KEY,
     domain: 'iifym.com'
-  });
+  }),
+  bcrypt = require('bcrypt');
 
 // POST /, /create
 router.post(['/', '/create'], (req, res) => {
-  new Order(_.extend(req.body, {
+  Order.forge(_.extend(req.body, {
     customer: req.user.id
   })).save().then((order) => {
     return res.json(new Serializer('order', {
@@ -32,7 +33,7 @@ router.post(['/', '/create'], (req, res) => {
 
 // GET /, /find
 router.get(['/', '/find'], (req, res) => {
-  new Order().where(_.extend(req.query, {
+  Order.where(_.extend(req.query, {
     customer: req.user.id
   })).fetchAll({
     withRelated: ['user']
@@ -54,7 +55,7 @@ router.get(['/', '/find'], (req, res) => {
 
 // GET /:id, /find/:id
 router.get(['/:id', '/find/:id'], (req, res) => {
-  new Order({
+  Order.forge({
     id: req.params.id
   }).fetch({
     withRelated: ['user']
@@ -83,7 +84,7 @@ router.patch(['/:id', '/edit/:id'], (req, res) => {
       });
     }
     let attributes = _.omit(edits, 'created-at', 'updated-at');
-    new Order(attributes).save().then((order) => {
+    Order.forge(attributes).save().then((order) => {
       return res.json(new Serializer('order', {
         id: 'id',
         attributes: Object.keys(order.toJSON())
@@ -93,6 +94,47 @@ router.patch(['/:id', '/edit/:id'], (req, res) => {
         message: 'Server error occurred'
       });
     });
+  });
+});
+
+router.post('/samcart', (req, res) => {
+  User.where('email', req.body.customer.email).count().then((count) => {
+    if(count > 0) {
+      User.forge({
+        email: req.body.customer.email
+      }).fetch().then((user) => {
+        Order.forge({
+          customer: user.id,
+          product: req.body.product.name,
+          price: req.body.order.total,
+          status: 'Received'
+        }).save().then((order) => {
+          return res.json(201, order.toJSON());
+        });
+      });
+    } else {
+      let password = randstr.generate(12);
+      bcrypt.hash(password, 12, (err, hash) => {
+        if(err) {
+          return res.status(500).send();
+        }
+        User.forge({
+          first_name: req.body.customer.first_name,
+          last_name: req.body.customer.last_name,
+          email: req.body.customer.email,
+          password: hash
+        }).save().then((user) => {
+          Order.forge({
+            customer: user.id,
+            product: req.body.product.name,
+            price: req.body.order.total,
+            status: 'Received'
+          }).save().then((order) => {
+            return res.json(201, order.toJSON());
+          });
+        });
+      });
+    }
   });
 });
 

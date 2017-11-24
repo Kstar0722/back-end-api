@@ -4,6 +4,9 @@ let bookshelf = require('../database'),
   User = bookshelf.Model.extend({
     tableName: 'users',
     hasTimestamps: true,
+    role: function() {
+      return this.belongsTo('Role', 'role');
+    },
     orders: function() {
       return this.hasMany('Order', 'customer');
     }

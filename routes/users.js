@@ -5,6 +5,7 @@ let express = require('express'),
   bcrypt = require('bcrypt'),
   _ = require('underscore'),
   User = require('../models').user,
+  Role = require('../models').role,
   Order = require('../models').order,
   CheckIt = require('checkit'),
   JSONAPI = require('jsonapi-serializer'),
@@ -17,7 +18,7 @@ router.post(['/', '/create'], (req, res) => {
     last_name: 'required',
     email: ['required', 'email'],
     password: 'required'
-  }).run(req.body).then((validated) => {
+  }).run(req.body).then(() => {
     bcrypt.hash(req.body.password, 12, (err, hash) => {
       if(err) {
         return res.status(500).json({
@@ -25,7 +26,7 @@ router.post(['/', '/create'], (req, res) => {
         });
       }
       req.body.password = hash;
-      new User(req.body).save().then((user) => {
+      User.forge(req.body).save().then((user) => {
         return res.json(new Serializer('user', {
           id: 'id',
           attributes: User.getAttributes(),
@@ -43,18 +44,26 @@ router.post(['/', '/create'], (req, res) => {
 
 // GET /:id, /find/:id
 router.get(['/:id', '/find/:id'], (req, res) => {
-  new User('id', req.params.id).fetch({
-    withRelated: ['orders']
+  User.forge({
+    id: req.params.id
+  }).fetch({
+    withRelated: ['role', 'orders']
   }).then((user) => {
+    console.log(user.toJSON());
     return res.json(new Serializer('user', {
       id: 'id',
       attributes: _.omit(Object.keys(user.toJSON()), 'id'),
+      role: {
+        ref: 'id',
+        attributes: Role.getAttributes()
+      },
       orders: {
         ref: 'id',
         attributes: Order.getAttributes()
       }
     }).serialize(user.toJSON()));
-  }, () => {
+  }, (err) => {
+    console.error(err);
     return res.status(500).json({
       message: 'Server error occurred'
     });
