@@ -7,7 +7,7 @@ let express = require('express'),
   _ = require('underscore'),
   config = require('../config'),
   CheckIt = require('checkit'),
-  User = require('../models').user;
+  User = require('../models/user');
 
 // POST /
 router.post('/', (req, res) => {

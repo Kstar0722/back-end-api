@@ -2,8 +2,8 @@
 
 let express = require('express'),
   router = express.Router(),
-  User = require('../models').user,
-  Order = require('../models').order,
+  User = require('../models/user'),
+  Order = require('../models/order'),
   _ = require('underscore'),
   JSONAPI = require('jsonapi-serializer'),
   Serializer = JSONAPI.Serializer,
