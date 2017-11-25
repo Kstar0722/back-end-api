@@ -10,6 +10,8 @@
     "bookshelf": "^0.10.2",
     "checkit": "^0.7.0",
     "cors": "^2.8.1",
+    "dustjs-helpers": "^1.7.3",
+    "dustjs-linkedin": "^2.7.4",
     "express": "^4.14.0",
     "express-jwt": "^5.0.0",
     "express-pdf": "^1.2.2",
@@ -24,8 +26,7 @@
   "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node app.js",
-    "prestart": "node ./node_modules/knex/bin/cli.js migrate:latest"
+    "start": "node app.js"
   },
   "license": "ISC"
 }

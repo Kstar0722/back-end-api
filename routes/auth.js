@@ -15,10 +15,16 @@ router.post('/', (req, res) => {
     username: ['required', 'email'],
     password: 'required'
   }).run(req.body).then(() => {
-    console.info(`Attempting to authenticate ${req.body.email}`);
     User.where({
       email: req.body.email || req.body.username
-    }).fetch().then((user) => {
+    }).fetch({
+      withRelated: ['role']
+    }).then((user) => {
+      /*if(user.relations.role.attributes.role !== 'admin') {
+        return res.status(403).json({
+          message: 'Only admins may login'
+        });
+      }*/
       if(user === null) {
         return res.status(401).json({
           message: 'Incorrect credentials'

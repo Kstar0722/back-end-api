@@ -49,7 +49,9 @@ router.get(['/:id', '/find/:id'], (req, res) => {
   }).fetch({
     withRelated: ['role', 'orders']
   }).then((user) => {
-    console.log(user.toJSON());
+    if(!user) {
+      return res.status(404).json({});
+    }
     return res.json(new Serializer('user', {
       id: 'id',
       attributes: _.omit(Object.keys(user.toJSON()), 'id'),
@@ -62,8 +64,7 @@ router.get(['/:id', '/find/:id'], (req, res) => {
         attributes: Order.getAttributes()
       }
     }).serialize(user.toJSON()));
-  }, (err) => {
-    console.error(err);
+  }, () => {
     return res.status(500).json({
       message: 'Server error occurred'
     });
