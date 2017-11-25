@@ -20,11 +20,11 @@ router.post('/', (req, res) => {
     }).fetch({
       withRelated: ['role']
     }).then((user) => {
-      if(user.relations.role.attributes.role !== 'admin') {
+      /*if(user.relations.role.attributes.role !== 'admin') {
         return res.status(403).json({
           message: 'Only admins may login'
         });
-      }
+      }*/
       if(user === null) {
         return res.status(401).json({
           message: 'Incorrect credentials'

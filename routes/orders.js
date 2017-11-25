@@ -4,6 +4,7 @@ let express = require('express'),
   router = express.Router(),
   User = require('../models').user,
   Order = require('../models').order,
+  Role = require('../models').role,
   _ = require('underscore'),
   JSONAPI = require('jsonapi-serializer'),
   Serializer = JSONAPI.Serializer,
@@ -13,7 +14,9 @@ let express = require('express'),
     apiKey: process.env.MAILGUN_KEY,
     domain: 'iifym.com'
   }),
-  bcrypt = require('bcrypt');
+  bcrypt = require('bcrypt'),
+  fs = require('fs'),
+  path = require('path');
 
 // POST /, /create
 router.post(['/', '/create'], (req, res) => {
@@ -33,19 +36,39 @@ router.post(['/', '/create'], (req, res) => {
 
 // GET /, /find
 router.get(['/', '/find'], (req, res) => {
-  Order.where(_.extend(req.query, {
-    //customer: req.user.id
-  })).fetchAll({
-    withRelated: ['user']
-  }).then((orders) => {
-    return res.json(new Serializer('order', {
-      id: 'id',
-      attributes: Order.getAttributes(),
-      user: {
-        ref: 'id',
-        attributes: User.getAttributes()
-      }
-    }).serialize(orders.toJSON()));
+  User.forge({
+    id: req.user.id
+  }).fetch({
+    withRelated: 'role'
+  }).then((user) => {
+    if(user.toJSON().role.role === 'customer') {
+      req.query.customer = user.id;
+    }
+    Order.forge().where(req.query).fetchAll({
+      withRelated: ['user']
+    }).then((orders) => {
+      return res.json(new Serializer('order', {
+        id: 'id',
+        attributes: Order.getAttributes(),
+        user: {
+          ref: 'id',
+          attributes: User.getAttributes()
+        }
+      }).serialize(orders.toJSON()));
+    }, () => {
+      return res.status(500).json({
+        message: 'Server error occurred'
+      });
+    });
+  })
+});
+
+// GET /count
+router.get('/count', (req, res) => {
+  Order.forge().where(req.query).count().then((count) => {
+    return res.json({
+      count: count
+    });
   }, () => {
     return res.status(500).json({
       message: 'Server error occurred'
@@ -55,9 +78,9 @@ router.get(['/', '/find'], (req, res) => {
 
 // GET /:id, /find/:id
 router.get(['/:id', '/find/:id'], (req, res) => {
-  Order.forge(/*{
+  Order.forge({
     id: req.params.id
-  }*/).fetch({
+  }).fetch({
     withRelated: ['user']
   }).then((orders) => {
     return res.json(new Serializer('order', {
@@ -124,6 +147,22 @@ router.post('/samcart', (req, res) => {
           email: req.body.customer.email,
           password: hash
         }).save().then((user) => {
+          fs.readFile(path.join(__dirname, '..', 'templates', 'samcart.html'), (err, data) => {
+            mailgun.messages().send({
+              from: 'IIFYM <accounts@iifym.com>',
+              to: req.body.customer.email,
+              subject: 'Your IIFYM Account',
+              html: require('util').format(data.toString(), req.body.customer.email, password)
+            }, (err, body) => {
+              if (err) {
+                return res.status(500).json({
+                  error: {
+                    message: 'Server error occurred'
+                  }
+                });
+              }
+            });
+          });
           Order.forge({
             customer: user.id,
             product: req.body.product.name,
