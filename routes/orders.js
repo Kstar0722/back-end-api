@@ -34,7 +34,7 @@ router.post(['/', '/create'], (req, res) => {
 // GET /, /find
 router.get(['/', '/find'], (req, res) => {
   Order.where(_.extend(req.query, {
-    customer: req.user.id
+    //customer: req.user.id
   })).fetchAll({
     withRelated: ['user']
   }).then((orders) => {
@@ -55,9 +55,9 @@ router.get(['/', '/find'], (req, res) => {
 
 // GET /:id, /find/:id
 router.get(['/:id', '/find/:id'], (req, res) => {
-  Order.forge({
+  Order.forge(/*{
     id: req.params.id
-  }).fetch({
+  }*/).fetch({
     withRelated: ['user']
   }).then((orders) => {
     return res.json(new Serializer('order', {
