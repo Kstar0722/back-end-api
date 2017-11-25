@@ -49,6 +49,9 @@ router.get(['/:id', '/find/:id'], (req, res) => {
   }).fetch({
     withRelated: ['role', 'orders']
   }).then((user) => {
+    if(!user) {
+      return res.status(404).json({});
+    }
     return res.json(new Serializer('user', {
       id: 'id',
       attributes: _.omit(Object.keys(user.toJSON()), 'id'),

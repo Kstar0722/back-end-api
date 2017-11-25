@@ -16,7 +16,8 @@ let express = require('express'),
   }),
   bcrypt = require('bcrypt'),
   fs = require('fs'),
-  path = require('path');
+  path = require('path'),
+  dust = require('dustjs-linkedin');
 
 // POST /, /create
 router.post(['/', '/create'], (req, res) => {
@@ -77,7 +78,7 @@ router.get('/count', (req, res) => {
 });
 
 // GET /:id, /find/:id
-router.get(['/:id', '/find/:id'], (req, res) => {
+router.get(['/:id([0-9]+)', '/find/:id([0-9]+)'], (req, res) => {
   Order.forge({
     id: req.params.id
   }).fetch({
@@ -99,7 +100,7 @@ router.get(['/:id', '/find/:id'], (req, res) => {
 });
 
 // PATCH /:id, /orders/:id
-router.patch(['/:id', '/edit/:id'], (req, res) => {
+router.patch(['/:id([0-9]+)', '/edit/:id([0-9]+)'], (req, res) => {
   new Deserializer().deserialize(req.body, (err, edits) => {
     if(err) {
       return res.status(500).json({
@@ -174,6 +175,32 @@ router.post('/samcart', (req, res) => {
         });
       });
     }
+  });
+});
+
+// POST /pdf
+router.post('/pdf', (req, res) => {
+  fs.readFile(path.join(__dirname, '..', 'templates', 'blueprint.html'), (err, template) => {
+    if(err) {
+      return res.status(500).json({
+        error: {
+          message: 'Server error occurred'
+        }
+      });
+    }
+    dust.renderSource(template.toString(), req.body, (err, rendered) => {
+      if(err) {
+        return res.status(500).json({
+          error: {
+            message: 'Server error occurred'
+          }
+        });
+      }
+      return res.pdfFromHTML({
+        filename: 'blueprint.pdf',
+        htmlContent: rendered
+      });
+    });
   });
 });
 
