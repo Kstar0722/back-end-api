@@ -11,6 +11,7 @@ let express = require('express'),
   config = require('./config'),
   database = require('./database');
 
+app.set('database', database);
 app.use(cors({
   origin: true,
   methods: ['GET', 'POST', 'PATCH'],
