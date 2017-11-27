@@ -45,9 +45,13 @@ router.get(['/', '/find'], (req, res) => {
     withRelated: 'role'
   }).then((user) => {
     if(user.toJSON().role.role === 'customer') {
-      req.query.customer = user.id;
+      req.query.params = {
+        customer: user.id
+      }
     }
-    Order.forge().where(req.query).fetchAll({
+    Order.forge().orderBy('created_at', 'DESC').where(req.query.params).fetchPage({
+      page: req.query.page || 1,
+      pageSize: 20,
       withRelated: ['user']
     }).then((orders) => {
       return res.json(new Serializer('order', {
