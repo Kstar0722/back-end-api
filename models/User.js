@@ -9,6 +9,9 @@ let bookshelf = require('../database'),
     },
     orders: function() {
       return this.hasMany('Order', 'customer');
+    },
+    infos: function() {
+      return this.hasMany('Info', 'user');
     }
   }, {
     getAttributes: () => {
