@@ -14,40 +14,170 @@ module.exports = {
 
   calculate: function(variables) {
     let result = {};
-    const protein_koef = {none: 0.8, moderate: 0.9, high: 1};
-    const carbs_koef = {
-      male:   {none: 1.2, moderate: 1.4, high: 1.6},
-      female: {none: 1, moderate: 1.2, high: 1.4},
-    };
-    result.protein_grams_per_day = variables.target_weight * protein_koef[variables.activity_level];
-    result.carb_grams_per_day = variables.current_weight * carbs_koef[variables.gender][variables.activity_level];
-    if(variables.gender == 'male') {
-      result.fat_grams_per_day = variables.current_weight > 350 ? variables.current_weight * .3 : variables.current_weight * .28;
-    } else {
-      if(variables.current_weight > 200) {
-        result.fat_grams_per_day = variables.current_weight * .4;
-      } else if(variables.current_weight <= 201 && variables.current_weight >= 250) {
-        result.fat_grams_per_day = variables.current_weight * .375;
-      } else if(variables.current_weight < 250 && variables.current_weight >= 300) {
-        result.fat_grams_per_day = variables.current_weight * .35;
-      } else {
-        result.fat_grams_per_day = variables.current_weight * .325;
-      }
-    }
-    // TODO
-    /*
-    result.default_calories = {
-      protein: result.default_protein * 4,
-      carbs: result.default_carbs * 4,
-      fat: result.default_fat * 9
-    };
-    */
-    //result.default_coefficient = variables.current_weight * 11;
-    result.refeed_fats = result.fat_grams_per_day * 0.8;
-    result.refeed_carbs = result.carb_grams_per_day * 1.6;
-    result.refeed_protein = result.protein_grams_per_day * 0.8;
 
-    Object.keys(result).forEach(key => {result[key] = Math.round(result[key])})
+    // S 14
+    let fat_opt ;
+    if (variables.current_weight < 126) {
+      fat_opt = 1;
+    } else if (variables.current_weight < 176) {
+      fat_opt = 2;
+    } else if (variables.current_weight < 201) {
+      fat_opt = 3;
+    } else if (variables.current_weight < 231) {
+      fat_opt = 4;
+    } else if (variables.current_weight < 261) {
+      fat_opt = 5;
+    } else if (variables.current_weight < 301) {
+      fat_opt = 6;
+    } else {
+      fat_opt = 7;
+    }
+    // S 15 => D14
+    let fat;
+    switch(fat_opt){
+      case 1:
+        fat = variables.current_weight * 0.4;
+        break;
+      case 2:
+        fat = 50 + (variables.current_weight - 125) * 0.35 * 0.4;
+        break;
+      case 3:
+        fat = 50 + 17.5 +(variables.current_weight - 175) * 0.3;
+        break;
+      case 4:
+        fat = 50 + 17.5 + 7.5 + (variables.current_weight - 200) * 0.25;
+        break;
+      case 5:
+        fat = 50 + 17.5 + 7.5 + 7.5 + (variables.current_weight - 230) * 0.2;
+        break;
+      case 6:
+        fat = 50 + 17.5 + 7.5 + 7.5 + 6 + (variables.current_weight - 260) * 0.15;
+        break;
+      case 7:
+        fat = 50 + 17.5 + 7.5 + 7.5 + 6 + 6 + (variables.current_weight - 300) * 0.1;
+        break;
+    }
+
+    // T14
+    let carbs_opt;
+    if (variables.current_weight < 161) {
+      carbs_opt = 1;
+    } else if (variables.current_weight < 201) {
+      carbs_opt = 2;
+    } else if (variables.current_weight < 251) {
+      carbs_opt = 3;
+    } else {
+      carbs_opt = 4;
+    }
+    // T15  => D13
+    let carbs;
+    switch(fat_opt){
+      case 1:
+        carbs = variables.current_weight;
+        break;
+      case 2:
+        carbs = 160 + (variables.current_weight - 160) * 0.7;
+        break;
+      case 3:
+        carbs = 160 + 28 + (variables.current_weight - 200) * 0.5;
+        break;
+      case 4:
+        carbs = 160 + 28 + 25 + (variables.current_weight - 250) * 0.35;
+        break;
+    }
+
+    // D12
+    let protein = variables.target_weight;
+
+    // A
+    result.protein_grams_per_day = 0;
+    // B
+    result.carb_grams_per_day = 0;
+    //variables.activity_level : none, moderate, high, high
+    switch (variables.activity_level){
+      case 'moderate':
+        result.protein_grams_per_day = variables.target_weight;
+        result.carb_grams_per_day = carbs;
+        break;
+      case 'high':
+        result.protein_grams_per_day = variables.target_weight;
+        result.carb_grams_per_day = carbs * 1.1;
+        break;
+      case 'veryhigh':
+        result.protein_grams_per_day = variables.target_weight * 1.1;
+        result.carb_grams_per_day = carbs * 1.2;
+        break;
+      default: // 'none'
+        result.protein_grams_per_day = variables.target_weight * 0.95;
+        result.carb_grams_per_day = carbs * 0.9;
+    }
+    // C
+    result.fat_grams_per_day = fat;
+
+    // D
+    result.water_leters_per_day = 3;
+
+    // F
+    result.calories_allowed = fat * 9 +  result.carb_grams_per_day * 4 + result.protein_grams_per_day * 4;
+
+    // if_tracking_macros_carbohydrates is not required
+    if (variables.if_tracking_macros_carbohydrates){
+      // H
+      result.carbs_currently_consumed = variables.if_tracking_macros_carbohydrates;
+
+      // I
+      result.first_week_carbs = result.carbs_currently_consumed * 1.35;
+
+      // II
+      result.carbs_to_add_weekly = result.carbs_currently_consumed * 1.65;
+
+      // J
+      result.max_carbs_goal = result.carbs_currently_consumed * 2;
+    }
+
+    let final_protein = 35;
+    // K
+    result.refeed_protein = Math.round(final_protein * 0.8);
+
+    let final_carbs = 130;
+    // L
+    result.refeed_carbs = final_carbs * 1.5;
+
+    let final_fat = 10;
+    // M
+    result.refeed_fats = final_fat * 0.8;
+
+    // N
+    result.non_refeed_low_protein =  result.protein_grams_per_day; // A
+
+    // O
+    result.non_refeed_low_carbs =  50; // "50 grams"
+
+    // P
+    result.non_refeed_low_fats =  25; // "50 grams"
+
+    // PP
+    result.low_grams_of_carbs_for_change =  result.carb_grams_per_day * 0.4;// B * 0.4
+
+    // PPP
+    let loss_weight_per_week;
+    if (variables.current_weight < 150) {
+      loss_weight_per_week = variables.current_weight * 0.006;
+    } else if (variables.current_weight < 250) {
+      loss_weight_per_week = variables.current_weight * 0.0065;
+    } else if (variables.current_weight < 300) {
+      loss_weight_per_week = variables.current_weight * 0.0075;
+    } else if (variables.current_weight < 350) {
+      loss_weight_per_week = variables.current_weight * 0.0085;
+    } else {
+      loss_weight_per_week = variables.current_weight * 0.01;
+    }
+    let length_of_weeks_from_start = (variables.current_weight - variables.target_weight) / loss_weight_per_week
+    result.length_of_months_from_start =  length_of_weeks_from_start / 4;
+
+    result.pregnant = (variables.are_you_pregnant_or_nursing == 'yes_i_am_pregnant');
+
+    Object.keys(result).forEach(key => {result[key] = (typeof result[key] === "number") ? Math.round(result[key]) : result[key];});
     return result;
   },
 

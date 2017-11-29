@@ -138,21 +138,19 @@ router.patch(['/:id([0-9]+)', '/edit/:id([0-9]+)'], (req, res) => {
 
 // PATCH /orders/:id/details
 router.patch('/:id([0-9]+)/details', (req, res) => {
-  new Deserializer().deserialize(req.body, (err, edits) => {
+  new Deserializer({
+    keyForAttribute: 'snake_case'
+  }).deserialize(req.body, (err, edits) => {
     if(err) {
       return res.status(500).json({
         message: 'Server error occurred'
       });
     }
-    edits = _.omit(edits, 'created-at', 'updated-at');
-    let attributes = {};
-    Object.keys(edits).forEach(key => {
-       attributes[ key.replace(/-/g, '_') ] = edits [ key ];
-    });
-    BlueprintDetails.where({'order': req.params.id}).save(attributes, {patch: true}).then((details) => {
+    BlueprintDetails.where({'order': req.params.id}).save(edits, {patch: true}).then((details) => {
       return res.json(new Serializer('blueprint_details', {
         id: 'id',
-        attributes: Object.keys(details.toJSON())
+        attributes: Object.keys(details.toJSON()),
+        keyForAttribute: 'snake_case'
       }).serialize(details.toJSON()));
     }, (err) => {
       return res.status(500).json({
@@ -171,6 +169,7 @@ router.get('/:id([0-9]+)/details', (req, res) => {
     return res.json(new Serializer('details', {
       id: 'id',
       attributes: BlueprintDetails.getAttributes(),
+      keyForAttribute: 'snake_case'
     }).serialize(details.toJSON()));
   }, () => {
     return res.status(500).json({
