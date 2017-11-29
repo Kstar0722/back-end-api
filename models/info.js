@@ -4,8 +4,8 @@ let bookshelf = require('../database'),
   Info = bookshelf.Model.extend({
     tableName: 'infos',
     hasTimestamps: true,
-    user: function() {
-      return this.belongsTo('User', 'user');
+    order: function() {
+      return this.belongsTo('Order', 'order');
     }
   }, {
     getAttributes: () => {

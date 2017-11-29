@@ -21,6 +21,8 @@
     "mailgun-js": "^0.7.12",
     "pg": "^6.1.0",
     "randomstring": "^1.1.5",
+    "s3": "^4.4.0",
+    "tmp": "0.0.31",
     "underscore": "^1.8.3"
   },
   "devDependencies": {},

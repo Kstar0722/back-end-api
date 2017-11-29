@@ -6,6 +6,12 @@ let bookshelf = require('../database'),
     hasTimestamps: true,
     user: function() {
       return this.belongsTo('User', 'customer');
+    },
+    infos: function() {
+      return this.hasMany('Info', 'order');
+    },
+    details: function() {
+      return this.hasOne('BlueprintDetails', 'order');
     }
   }, {
     getAttributes: () => {
