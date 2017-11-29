@@ -49,7 +49,7 @@ router.get(['/', '/find'], (req, res) => {
         customer: user.id
       }
     }
-    Order.forge().orderBy('created_at', 'DESC').where(req.query.params).fetchPage({
+    Order.forge().orderBy('created_at', 'DESC').where(req.query.params || {}).fetchPage({
       page: req.query.page || 1,
       pageSize: 20,
       withRelated: ['user']
@@ -62,7 +62,8 @@ router.get(['/', '/find'], (req, res) => {
           attributes: User.getAttributes()
         }
       }).serialize(orders.toJSON()));
-    }, () => {
+    }, (err) => {
+      console.error(err);
       return res.status(500).json({
         message: 'Server error occurred'
       });
@@ -88,16 +89,20 @@ router.get(['/:id([0-9]+)', '/find/:id([0-9]+)'], (req, res) => {
   Order.forge({
     id: req.params.id
   }).fetch({
-    withRelated: ['user']
-  }).then((orders) => {
+    withRelated: ['user', 'infos']
+  }).then((order) => {
     return res.json(new Serializer('order', {
       id: 'id',
       attributes: Order.getAttributes(),
       user: {
         ref: 'id',
         attributes: User.getAttributes()
+      },
+      infos: {
+        ref: 'id',
+        attributes: Info.getAttributes()
       }
-    }).serialize(orders.toJSON()));
+    }).serialize(order.toJSON()));
   }, () => {
     return res.status(500).json({
       message: 'Server error occurred'
@@ -181,108 +186,6 @@ router.post('/samcart', (req, res) => {
         });
       });
     }
-  });
-});
-
-// POST /pdf
-router.post('/pdf', (req, res) => {
-  Info.forge({
-    user: req.user.id
-  }).fetchAll().then((infos) => {
-    _.each(infos.toJSON(), (info) => {
-      req.body[info.key] = info.value;
-    });
-    new CheckIt({
-      name: 'required',
-      current_weight: 'required',
-      target_weight: 'required',
-      gender: 'required',
-      activity_level: 'required'
-    }).run(req.body).then(() => {
-      let dir = path.join(__dirname, '..', 'templates', 'blueprint.html');
-      fs.readFile(dir, (err, template) => {
-        if(err) {
-          return res.status(500).json({
-            error: {
-              message: 'Server error occurred'
-            }
-          });
-        }
-        let variables = {
-          name: req.body.name,
-          current_weight: req.body.current_weight,
-          target_weight: req.body.target_weight,
-          gender: req.body.gender,
-          activity_level: req.body.activity_level
-        };
-        variables.default_protein = {
-          none: variables.target_weight * 0.8,
-          moderate: variables.target_weight * 0.9,
-          high: variables.target_weight * 1
-        };
-        variables.default_protein = variables.default_protein[variables.activity_level];
-        variables.default_carbs = {
-          male: {
-            none: variables.current_weight * 1.2,
-            moderate: variables.current_weight * 1.4,
-            high: variables.current_weight * 1.6
-          },
-          female: {
-            none: variables.current_weight * 1,
-            moderate: variables.current_weight * 1.2,
-            high: variables.current_weight * 1.4
-          }
-        };
-        variables.default_carbs = variables.default_carbs[variables.gender][variables.activity_level];
-        if(variables.gender == 'male') {
-          variables.default_fat = variables.current_weight > 350 ? variables.current_weight * .3 : variables.current_weight * .28;
-        } else {
-          if(variables.current_weight > 200) {
-            variables.default_fat = variables.current_weight * .4;
-          } else if(variables.current_weight <= 201 && variables.current_weight >= 250) {
-            variables.default_fat = variables.current_weight * .375;
-          } else if(variables.current_weight < 250 && variables.current_weight >= 300) {
-            variables.default_fat = variables.current_weight * .35;
-          } else {
-            variables.default_fat = variables.current_weight * .325;
-          }
-        }
-        variables.default_calories = {
-          protein: variables.default_protein * 4,
-          carbs: variables.default_carbs * 4,
-          fat: variables.default_fat * 9
-        };
-        variables.default_coefficient = variables.current_weight * 11;
-        variables.refeed_macros_fat = variables.default_fat * 0.8;
-        variables.refeed_macros_carbs = variables.default_carbs * 1.6;
-        variables.refeed_macros_protein = variables.default_protein * 0.8;
-        dust.renderSource(template.toString(), variables, (err, rendered) => {
-          if(err) {
-            return res.status(500).json({
-              error: {
-                message: 'Server error occurred'
-              }
-            });
-          }
-          return res.pdfFromHTML({
-            filename: 'blueprint.pdf',
-            htmlContent: rendered
-          });
-        });
-      });
-    }).catch(() => {
-      return res.status(401).json({
-        error: {
-          message: 'Missing required attributes'
-        }
-      });
-    });
-  }, (err) => {
-    return res.status(500).json({
-      error: {
-        message: 'Server error occurred'
-      }
-    });
   });
 });
 
