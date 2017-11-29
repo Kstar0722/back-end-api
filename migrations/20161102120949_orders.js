@@ -6,7 +6,7 @@ exports.up = function(knex, Promise) {
       t.increments().primary();
       t.integer('customer').unsigned().references('users.id').notNullable();
       t.string('product', 512).notNullable(512);
-      t.decimal('price').notNullable();
+      t.decimal('price');
       t.string('status').defaultTo('Received').notNullable();
       t.timestamps();
     })

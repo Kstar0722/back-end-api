@@ -5,7 +5,7 @@ exports.up = function(knex, Promise) {
       t.increments().primary();
       t.string('key').notNullable();
       t.string('value').notNullable();
-      t.integer('user').unsigned().references('users.id').notNullable();
+      t.integer('order').unsigned().references('orders.id').notNullable();
       t.timestamps();
     })
   ]);
