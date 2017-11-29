@@ -26,6 +26,7 @@ app.use(bodyParser.json({
   type: 'application/*'
 }));
 app.use(require('express-pdf'));
+app.use(require('skipper')());
 app.use(jwt({
   secret: config.token_secret
 }).unless({

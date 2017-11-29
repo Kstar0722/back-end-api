@@ -15,7 +15,7 @@ let bookshelf = require('../database'),
     }
   }, {
     getAttributes: () => {
-      return ['product', 'price', 'status', 'user', 'created_at', 'updated_at'];
+      return ['product', 'price', 'status', 'user', 'created_at', 'updated_at', 'pdf'];
     }
   });
 
