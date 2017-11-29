@@ -83,7 +83,7 @@ module.exports = {
     Order.forge({
       id: order
     }).fetch({
-      withRelated: ['infos'/*, 'details'*/]
+      withRelated: ['infos', 'details']
     }).then((order) => {
       let infos = _this.formatInfos(_.map(order.toJSON().infos));
       let details = _.omit(order.toJSON().details, ['id', 'order', 'created_at', 'updated_at']);

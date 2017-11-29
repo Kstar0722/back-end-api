@@ -45,12 +45,11 @@ router.get(['/', '/find'], (req, res) => {
   }).fetch({
     withRelated: 'role'
   }).then((user) => {
+    let params = _.omit(req.query || {}, ['page']);
     if(user.toJSON().role.role === 'customer') {
-      req.query.params = {
-        customer: user.id
-      }
+      params.customer = user.id;
     }
-    Order.forge().orderBy('created_at', 'DESC').where(req.query.params || {}).fetchPage({
+    Order.forge().orderBy('created_at', 'DESC').where(params).fetchPage({
       page: req.query.page || 1,
       pageSize: 20,
       withRelated: ['user']
