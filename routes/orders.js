@@ -6,6 +6,7 @@ let express = require('express'),
   Order = require('../models').order,
   Role = require('../models').role,
   Info = require('../models').info,
+  BlueprintDetails = require('../models').blueprint_details,
   _ = require('underscore'),
   JSONAPI = require('jsonapi-serializer'),
   Serializer = JSONAPI.Serializer,
@@ -89,11 +90,11 @@ router.get(['/:id([0-9]+)', '/find/:id([0-9]+)'], (req, res) => {
   Order.forge({
     id: req.params.id
   }).fetch({
-    withRelated: ['user', 'infos']
+    withRelated: ['user', 'infos', 'details']
   }).then((order) => {
     return res.json(new Serializer('order', {
       id: 'id',
-      attributes: Order.getAttributes(),
+      attributes: _.union(Order.getAttributes(), ['infos', 'details']),
       user: {
         ref: 'id',
         attributes: User.getAttributes()
@@ -101,6 +102,10 @@ router.get(['/:id([0-9]+)', '/find/:id([0-9]+)'], (req, res) => {
       infos: {
         ref: 'id',
         attributes: Info.getAttributes()
+      },
+      details: {
+        ref: 'id',
+        attributes: BlueprintDetails.getAttributes()
       }
     }).serialize(order.toJSON()));
   }, () => {
@@ -128,6 +133,49 @@ router.patch(['/:id([0-9]+)', '/edit/:id([0-9]+)'], (req, res) => {
       return res.status(500).json({
         message: 'Server error occurred'
       });
+    });
+  });
+});
+
+// PATCH /orders/:id/details
+router.patch('/:id([0-9]+)/details', (req, res) => {
+  new Deserializer().deserialize(req.body, (err, edits) => {
+    if(err) {
+      return res.status(500).json({
+        message: 'Server error occurred'
+      });
+    }
+    edits = _.omit(edits, 'created-at', 'updated-at');
+    let attributes = {};
+    Object.keys(edits).forEach(key => {
+       attributes[ key.replace(/-/g, '_') ] = edits [ key ];
+    });
+    BlueprintDetails.where({'order': req.params.id}).save(attributes, {patch: true}).then((details) => {
+      return res.json(new Serializer('blueprint_details', {
+        id: 'id',
+        attributes: Object.keys(details.toJSON())
+      }).serialize(details.toJSON()));
+    }, (err) => {
+      return res.status(500).json({
+        message: 'Server error occurred'
+      });
+    });
+  });
+});
+
+// GET /:id/details
+router.get('/:id([0-9]+)/details', (req, res) => {
+  BlueprintDetails.forge({
+    order: req.params.id
+  }).fetch({
+  }).then((details) => {
+    return res.json(new Serializer('details', {
+      id: 'id',
+      attributes: BlueprintDetails.getAttributes(),
+    }).serialize(details.toJSON()));
+  }, () => {
+    return res.status(500).json({
+      message: 'Server error occurred'
     });
   });
 });
@@ -187,6 +235,42 @@ router.post('/samcart', (req, res) => {
       });
     }
   });
+});
+
+router.get('/info', (req, res) => {
+  var result = {
+    has_blueprint: false,
+    need_to_fill_form: false,
+    has_90daychalenge: false
+  };
+  Order.where({product: "90 Day Challenge"}).orderBy('updated_at', 'DESC').fetch().then((order) => {
+      if (order){
+        result.has_90daychalenge = true;
+      }
+      return Order.where({product: 'BluePrint'}).orderBy('updated_at', 'DESC').fetch();
+    }).then((order) => {
+      if (order){
+        result.has_blueprint = true;
+        result.need_to_fill_form = true;
+        return Info.where({
+            order: order.id
+          }).count('*').then((count) => {
+            if (count > 0) {
+              result.need_to_fill_form = false;
+            }
+            return Promise.resolve(null);
+          });
+      } else {
+        return Promise.resolve(null);
+      }
+    }).then(() => {
+      return res.json(result);
+    }, () => {
+      return res.status(500).json({
+        message: 'Server error occurred'
+      });
+    });
+
 });
 
 module.exports = router;
