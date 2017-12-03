@@ -11,6 +11,8 @@ let express = require('express'),
   config = require('./config'),
   database = require('./database');
 
+  global.ExternalServices = require('./lib/external_services');
+
 app.set('database', database);
 app.use(cors({
   origin: true,
@@ -52,3 +54,5 @@ let listener = app.listen(process.env.PORT || 3000, () => {
   let address = listener.address();
   console.info(`Started server on ${address.address}${address.port} in ${process.env.NODE_ENV || 'development'}`);
 });
+
+module.exports = app;

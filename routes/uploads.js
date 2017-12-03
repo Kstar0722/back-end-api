@@ -1,50 +1,41 @@
 //let router = express.Router(),
 let express = require('express'),
-    router = express.Router()
+    router = express.Router(),
     Order = require('../models').order,
     Upload = require('../models').upload,
     JSONAPI = require('jsonapi-serializer'),
     Serializer = JSONAPI.Serializer,
-    randstr = require('randomstring'),
     helper = require('../lib/helper'),
-    s3 = require('s3').createClient({
-      s3Options: {
-        accessKeyId: process.env.S3_ACCESS_KEY,
-        secretAccessKey: process.env.S3_SECRET_KEY,
-        region: 'us-west-2'
-      }
-    }),
-    url = require('url')
-
+    config = require('../config'),
+    _ = require('underscore')
   ;
 
 router.post('/resend', (req, res) => {
   if (!req.body.order){
     res.send(500, {status: "error", massage: "order is required"});
   }
-  if (!req.body.name){
-    res.send(500, {status: "error", massage: "name is required"});
-  }
   Order.forge({id: req.body.order}).fetch({
     withRelated: ['user', 'uploads']
   }).then((order) => {
-    let uploads = order.relations.uploads.filter(upload => upload.attributes.name == req.body.name);
-    if (uploads.length == 0) {
+    let uploads = order.relations.uploads;
+    if (req.body.name) {
+      let names = _.isArray(req.body.name) ? req.body.name : [req.body.name];
+      uploads = order.relations.uploads.filter(upload => names.indexOf(upload.attributes.name) > -1);
+    }
+    let links = uploads.map(upload => ({name: upload.attributes.name, url: upload.attributes.url}));
+    if (links.length == 0) {
       res.send(500, {status: "error", massage: "order doesn't contain required pdf"});
     }
     let email = (order.relations.user) ? order.relations.user.attributes.email : null;
-    if (!email){
+    if (!email) {
       res.send(500, {status: "error", massage: "has no user or email"});
     }
-    helper.sendEmail(email, "pdf", {pdf: uploads[0].attributes.url}, function (err, body){
-      console.log(err, body)
-      if (err){
-        res.send(500, {status: "error", massage: "Sending email: " + err.message});
-      } else {
-        res.json({status: "ok"});
-      }
-    });
-  })
+    return helper.sendEmail(email, "pdf", {name: order.relations.user.attributes.first_name, links, login_url: `http://${config.domain}/${config.dashboard_url}`});
+  }).then((body) =>{
+    res.json({status: "ok"});
+  }).catch((err) => {
+    res.status(500).send(err);
+  });
 });
 
 router.post('/', (req, res) => {
@@ -56,7 +47,6 @@ router.post('/', (req, res) => {
   }
   let order,
     upload,
-    fn,
     key;
 
   Order.forge({id: req.body.order}).fetch({
@@ -72,15 +62,6 @@ router.post('/', (req, res) => {
     }).fetch();
   }).then((_upload) => {
     upload = _upload;
-    if (upload) {
-      let pathname = url.parse(upload.attributes.url).pathname;
-      if (pathname) {
-        key = pathname.split('/').pop();
-      }
-    }
-    if (!key) {
-      key = randstr.generate({length: 20, capitalization: "lowercase"})+".pdf";
-    }
 
     return new Promise((resolve, reject) => {
       req.file('pdf').upload(function (err, uploadedFiles){
@@ -92,36 +73,22 @@ router.post('/', (req, res) => {
       });
     });
   }).then((uploadedFile) => {
-    return s3.uploadFile({
-      localFile: uploadedFile.fd,
-      s3Params: {
-        ACL: 'public-read',
-        Bucket: 'iifym-blueprints',
-        Key: key
-      }
-    });
+    key = helper.getS3Key((upload) ? upload.attributes.url : null);
+    ExternalServices.UploadFileS3(uploadedFile.fd, key)
   }).then((output) => {
-    // TODO
-    fn = 'https://s3-us-west-2.amazonaws.com/iifym-blueprints/' + key;
     if (upload) {
       return Promise.resolve(upload);
     } else {
-      return Upload.forge().save({order: req.body.order, name: req.body.name, url: fn}, {method: "insert"});
+      return Upload.forge().save({order: req.body.order, name: req.body.name, url: helper.getS3Link(key)}, {method: "insert"});
     }
   }).then((upload) => {
-    let email = (order.relations.user) ? order.relations.user.attributes.email : null;
-    if (email && req.body.send_email_notification){
-      helper.sendEmail(email, "pdf", {pdf: fn}, function (err, body){
-          // console.log(err, body)
-      })
-    }
     return res.json(new Serializer('upload', {
       id: 'id',
       attributes: ['order', 'name', 'url'],
       keyForAttribute: 'snake_case'
     }).serialize(upload.toJSON()));
   }).catch((err) => {
-    res.send(500, err);
+    res.status(500).send(err);
   });
 
 });

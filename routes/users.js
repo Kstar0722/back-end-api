@@ -9,31 +9,42 @@ let express = require('express'),
   Order = require('../models').order,
   CheckIt = require('checkit'),
   JSONAPI = require('jsonapi-serializer'),
+  Deserializer = JSONAPI.Deserializer,
   Serializer = JSONAPI.Serializer;
 
 // POST /, /create
 router.post(['/', '/create'], (req, res) => {
-  new CheckIt({
-    first_name: 'required',
-    last_name: 'required',
-    email: ['required', 'email'],
-    password: 'required'
-  }).run(req.body).then(() => {
-    bcrypt.hash(req.body.password, 12, (err, hash) => {
+
+  let user;
+  new Deserializer({keyForAttribute: 'snake_case'}).deserialize(req.body).then((_user) => {
+    user = _user;
+
+    user = _.pick(user, _.union(_.difference(User.getAttributes(), ['created_at', 'updated_at']), ['password']));
+
+    return new CheckIt({
+      first_name: 'required',
+      last_name: 'required',
+      email: ['required', 'email'],
+      password: 'required'
+    }).run(user);
+
+  }).then(() => {
+    bcrypt.hash(user.password, 12, (err, hash) => {
       if(err) {
         return res.status(500).json({
           message: 'Server error occurred'
         });
       }
-      req.body.password = hash;
-      User.forge(req.body).save().then((user) => {
+      user.password = hash;
+      User.forge(user).save().then((user) => {
+
         return res.json(new Serializer('user', {
           id: 'id',
           attributes: User.getAttributes(),
         }).serialize(user.toJSON()));
-      }, () => {
+      }, (err) => {
         return res.status(500).json({
-          message: 'Server error occurred'
+          message: err.message
         });
       });
     });
