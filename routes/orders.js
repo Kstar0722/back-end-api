@@ -6,6 +6,7 @@ let express = require('express'),
   Order = require('../models').order,
   Role = require('../models').role,
   Info = require('../models').info,
+  Upload = require('../models').upload,
   BlueprintDetails = require('../models').blueprint_details,
   _ = require('underscore'),
   JSONAPI = require('jsonapi-serializer'),
@@ -89,11 +90,11 @@ router.get(['/:id([0-9]+)', '/find/:id([0-9]+)'], (req, res) => {
   Order.forge({
     id: req.params.id
   }).fetch({
-    withRelated: ['user', 'infos', 'details']
+    withRelated: ['user', 'infos', 'details', 'uploads']
   }).then((order) => {
     return res.json(new Serializer('order', {
       id: 'id',
-      attributes: _.union(Order.getAttributes(), ['infos', 'details']),
+      attributes: _.union(Order.getAttributes(), ['infos', 'details', 'uploads']),
       user: {
         ref: 'id',
         attributes: User.getAttributes()
@@ -105,6 +106,10 @@ router.get(['/:id([0-9]+)', '/find/:id([0-9]+)'], (req, res) => {
       details: {
         ref: 'id',
         attributes: BlueprintDetails.getAttributes()
+      },
+      uploads: {
+        ref: 'id',
+        attributes: Upload.getAttributes()
       }
     }).serialize(order.toJSON()));
   }, () => {

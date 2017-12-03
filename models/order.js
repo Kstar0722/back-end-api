@@ -12,6 +12,9 @@ let bookshelf = require('../database'),
     },
     details: function() {
       return this.hasOne('BlueprintDetails', 'order');
+    },
+    uploads: function() {
+      return this.hasMany('Upload', 'order');
     }
   }, {
     getAttributes: () => {
