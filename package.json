@@ -12,6 +12,7 @@
     "checkit": "^0.7.0",
     "cors": "^2.8.1",
     "dustjs-linkedin": "^2.7.4",
+    "dustjs-helpers": "^1.7.3",
     "express": "^4.14.0",
     "express-jwt": "^5.0.0",
     "express-pdf": "^1.2.2",
