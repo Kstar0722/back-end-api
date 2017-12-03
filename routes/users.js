@@ -2,8 +2,8 @@
 
 let express = require('express'),
   router = express.Router(),
-  bcrypt = require('bcrypt'),
   _ = require('underscore'),
+  helper = require('../lib/helper'),
   User = require('../models').user,
   Role = require('../models').role,
   Order = require('../models').order,
@@ -14,6 +14,12 @@ let express = require('express'),
 
 // POST /, /create
 router.post(['/', '/create'], (req, res) => {
+
+  if (req.user.role != 2){
+    return res.status(403).json({
+      message: 'Forbidden'
+    });
+  }
 
   let user;
   new Deserializer({keyForAttribute: 'snake_case'}).deserialize(req.body).then((_user) => {
@@ -29,32 +35,32 @@ router.post(['/', '/create'], (req, res) => {
     }).run(user);
 
   }).then(() => {
-    bcrypt.hash(user.password, 12, (err, hash) => {
-      if(err) {
-        return res.status(500).json({
-          message: 'Server error occurred'
-        });
-      }
-      user.password = hash;
-      User.forge(user).save().then((user) => {
-
-        return res.json(new Serializer('user', {
-          id: 'id',
-          attributes: User.getAttributes(),
-        }).serialize(user.toJSON()));
-      }, (err) => {
-        return res.status(500).json({
-          message: err.message
-        });
-      });
-    });
+    return helper.hashPassword(user.password);
+  }).then((hash) => {
+    user.password = hash;
+    return User.forge(user).save();
+  }).then((user) => {
+    return res.json(new Serializer('user', {
+      id: 'id',
+      attributes: User.getAttributes(),
+    }).serialize(user.toJSON()));
   }).catch((err) => {
-    return res.status(400).json(err);
+    return res.status(500).json({
+      message: err.message
+    });
   });
+
 });
 
 // GET /:id, /find/:id
 router.get(['/:id', '/find/:id'], (req, res) => {
+
+  if (req.user.role != 2 || req.user.id != req.params.id){
+    return res.status(403).json({
+      message: 'Forbidden'
+    });
+  }
+
   User.forge({
     id: req.params.id
   }).fetch({

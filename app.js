@@ -36,12 +36,6 @@ app.use(jwt({
     url: '/auth',
     methods: ['POST']
   }, {
-    url: '/users',
-    methods: ['POST']
-  }, {
-    url: '/users/create',
-    methods: ['POST']
-  }, {
     url: '/orders/samcart',
     methods: ['POST']
   }]

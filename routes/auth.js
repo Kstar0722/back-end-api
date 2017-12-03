@@ -40,10 +40,12 @@ router.post('/', (req, res) => {
         if(matches) {
           return res.json({
             access_token: jwt.sign({
-              id: user.id
+              id: user.id,
+              role: user.role.id
             }, config.token_secret),
             user: {
-              id: user.id
+              id: user.id,
+              role: user.role.id
             }
           });
         } else {
