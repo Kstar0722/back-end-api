@@ -7,7 +7,7 @@ let express = require('express'),
     Serializer = JSONAPI.Serializer,
     helper = require('../lib/helper'),
     config = require('../config'),
-    _ = require('lodash')
+    _ = require('underscore')
   ;
 
 router.post('/resend', (req, res) => {

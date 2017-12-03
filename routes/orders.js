@@ -25,32 +25,50 @@ let express = require('express'),
 
 // POST /, /create
 router.post(['/', '/create'], (req, res) => {
-  Order.forge(_.extend(req.body, {
-    customer: req.user.id
-  })).save().then((order) => {
-    return res.json(new Serializer('order', {
+
+  if (req.user.role != 2){
+    return res.status(403).json({
+      message: 'Forbidden'
+    });
+  }
+
+  let order;
+
+  new Deserializer({keyForAttribute: 'snake_case'}).deserialize(req.body).then((_order) => {
+    order = _order;
+
+    order = _.pick(order, _.difference(Order.getAttributes(), ['created_at', 'updated_at', 'user']));
+
+    return new CheckIt({
+      product: 'required',
+      price: 'required',
+      status: 'required',
+      customer: 'required',
+    }).run(order);
+
+  }).then(() => {
+    return Order.forge(order).save();
+  }).then((order) => {
+    res.json(new Serializer('order', {
       id: 'id',
-      attributes: _.omit(Order.getAttributes(), 'user'),
+      attributes: Order.getAttributes(),
     }).serialize(order.toJSON()));
-  }, () => {
-    return res.status(500).json({
+  }).catch((err) => {
+    res.status(500).json({
       message: 'Server error occurred'
     });
-  })
+  });
 });
 
 // GET /, /find
 router.get(['/', '/find'], (req, res) => {
-  User.forge({
-    id: req.user.id
-  }).fetch({
-    withRelated: 'role'
-  }).then((user) => {
-    let params = _.omit(req.query || {}, ['page']);
-    if(user.toJSON().role.role === 'customer') {
-      params.customer = user.id;
-    }
-    Order.forge().orderBy('created_at', 'DESC').where(params).fetchPage({
+
+  let params = _.omit(req.query || {}, ['page']);
+  if (req.user.role == 1){
+    where.customer = req.user.id;
+  }
+
+  Order.forge().orderBy('created_at', 'DESC').where(params).fetchPage({
       page: req.query.page || 1,
       pageSize: 20,
       withRelated: ['user']
@@ -69,7 +87,6 @@ router.get(['/', '/find'], (req, res) => {
         message: 'Server error occurred'
       });
     });
-  })
 });
 
 // GET /count
@@ -121,22 +138,29 @@ router.get(['/:id([0-9]+)', '/find/:id([0-9]+)'], (req, res) => {
 
 // PATCH /:id, /orders/:id
 router.patch(['/:id([0-9]+)', '/edit/:id([0-9]+)'], (req, res) => {
-  new Deserializer().deserialize(req.body, (err, edits) => {
-    if(err) {
-      return res.status(500).json({
-        message: 'Server error occurred'
-      });
-    }
-    let attributes = _.omit(edits, 'created-at', 'updated-at');
-    Order.forge(attributes).save().then((order) => {
-      return res.json(new Serializer('order', {
-        id: 'id',
-        attributes: Object.keys(order.toJSON())
-      }).serialize(order.toJSON()));
-    }, (err) => {
-      return res.status(500).json({
-        message: 'Server error occurred'
-      });
+
+  if (req.user.role != 2){
+    return res.status(403).json({
+      message: 'Forbidden'
+    });
+  }
+
+  let order = {};
+
+  new Deserializer({keyForAttribute: 'snake_case'}).deserialize(req.body).then((_order) => {
+    order = _order;
+
+    order = _.pick(order, _.union(_.difference(Order.getAttributes(), ['created_at', 'updated_at', 'user']), ['id']));
+
+    return Order.forge(order).save({}, {patch: true});
+  }).then((order) => {
+    return res.json(new Serializer('order', {
+      id: 'id',
+      attributes: Object.keys(order.toJSON())
+    }).serialize(order.toJSON()));
+  }).catch((err) => {
+    return res.status(500).json({
+      message: 'Server error occurred'
     });
   });
 });
