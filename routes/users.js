@@ -71,7 +71,7 @@ router.get(['/:id', '/find/:id'], (req, res) => {
     }
     return res.json(new Serializer('user', {
       id: 'id',
-      attributes: _.omit(Object.keys(user.toJSON()), 'id'),
+      attributes: User.getAttributes(),
       role: {
         ref: 'id',
         attributes: Role.getAttributes()
