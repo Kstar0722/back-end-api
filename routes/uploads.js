@@ -73,7 +73,7 @@ router.post('/', (req, res) => {
       });
     });
   }).then((uploadedFile) => {
-    key = helper.getS3Key((upload) ? upload.attributes.url : null);
+    key = helper.getS3Key((upload) ? upload.attributes.url : null, uploadedFile.filename);
     ExternalServices.UploadFileS3(uploadedFile.fd, key)
   }).then((output) => {
     if (upload) {
