@@ -38,12 +38,68 @@ router.post('/resend', (req, res) => {
   });
 });
 
-router.post('/', (req, res) => {
+router.post('/attach', (req, res) => {
+
+  if (req.user.role != 2){
+    return res.status(403).json({
+      message: 'Forbidden'
+    });
+  }
+
   if (!req.body.order){
     res.send(500, {status: "error", massage: "order is required"});
   }
   if (!req.body.name){
     res.send(500, {status: "error", massage: "file name is required"});
+  }
+  if (['Ultimate IIFYM Guide', '100 Macro Friendly Recipes'].indexOf(req.body.name) < 0){
+    res.send(500, {status: "error", massage: "there no file - "+req.body.name});
+  }
+
+  Order.forge({id: req.body.order}).fetch({
+    withRelated: ['user']
+  }).then((order) => {
+    if (!order) {
+      res.send(500, {status: "error", massage: "order not found"});
+    }
+    return Upload.forge({
+      order: req.body.order,
+      name: req.body.name,
+    }).fetch();
+  }).then((upload) => {
+    if (upload) {
+      return Promise.reject(new Error('file already attached'));
+    }
+    let key = '01/'+req.body.name.toLowerCase().replace(/ /g, '-')+'.pdf';
+    return Upload.forge().save({order: req.body.order, name: req.body.name, url: helper.getS3Link(key)}, {method: "insert"});
+  }).then((upload) => {
+    return res.json(new Serializer('upload', {
+      id: 'id',
+      attributes: ['order', 'name', 'url'],
+      keyForAttribute: 'snake_case'
+    }).serialize(upload.toJSON()));
+  }).catch((err) => {
+    res.status(500).send(err);
+  });
+
+});
+
+router.post('/', (req, res) => {
+
+  if (req.user.role != 2){
+    return res.status(403).json({
+      message: 'Forbidden'
+    });
+  }
+
+  if (!req.body.order){
+    res.send(500, {status: "error", massage: "order is required"});
+  }
+  if (!req.body.name){
+    res.send(500, {status: "error", massage: "file name is required"});
+  }
+  if (['Ultimate IIFYM Guide', '100 Macro Friendly Recipes'].indexOf(req.body.name) > -1){
+    res.send(500, {status: "error", massage: "don't re-upload predefined file - "+req.body.name});
   }
   let order,
     upload,
