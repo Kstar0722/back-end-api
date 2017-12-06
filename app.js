@@ -36,6 +36,12 @@ app.use(jwt({
     url: '/auth',
     methods: ['POST']
   }, {
+    url: '/auth/forgot_password',
+    methods: ['POST']
+  }, {
+    url: /auth\/reset_password\/.*$/,
+    methods: ['POST']
+  }, {
     url: '/orders/samcart',
     methods: ['POST']
   }]

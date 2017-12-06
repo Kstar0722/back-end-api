@@ -45,7 +45,6 @@ router.post(['/', '/create'], (req, res) => {
       status: 'required',
       customer: 'required',
     }).run(order);
-
   }).then(() => {
     return Order.forge(order).save();
   }).then((order) => {
