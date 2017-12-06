@@ -88,4 +88,35 @@ router.get(['/:id', '/find/:id'], (req, res) => {
   });
 });
 
+// GET /
+router.get('/', (req, res) => {
+
+  if (req.user.role != 2){
+    return res.status(403).json({
+      message: 'Forbidden'
+    });
+  }
+
+  let params = _.omit(req.query || {}, ['page']);
+
+  User.forge().orderBy('created_at', 'DESC').where(params).fetchPage({
+    page: req.query.page || 1,
+    pageSize: 20,
+    withRelated: ['role']
+  }).then((users) => {
+    return res.json(new Serializer('user', {
+      id: 'id',
+      attributes: User.getAttributes(),
+      role: {
+        ref: 'id',
+        attributes: Role.getAttributes()
+      },
+    }).serialize(users.toJSON()));
+  }, () => {
+    return res.status(500).json({
+      message: 'Server error occurred'
+    });
+  });
+});
+
 module.exports = router;
