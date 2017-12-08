@@ -22,6 +22,8 @@ router.post(['/', '/create'], (req, res) => {
   }
 
   let user;
+  let password;
+
   new Deserializer({keyForAttribute: 'snake_case'}).deserialize(req.body).then((_user) => {
     user = _user;
 
@@ -35,11 +37,20 @@ router.post(['/', '/create'], (req, res) => {
     }).run(user);
 
   }).then(() => {
+    password = user.password;
     return helper.hashPassword(user.password);
   }).then((hash) => {
     user.password = hash;
     return User.forge(user).save();
   }).then((user) => {
+    require('fs').readFile(require('path').join(__dirname, '..', 'templates', 'samcart.html'), (err, data) => {
+      ExternalServices.sendEmail(user.get('email'),
+        'Your IIFYM Account',
+        require('util').format(data.toString(), user.get('email'), password),
+        (err, body) => {
+
+        });
+    });
     return res.json(new Serializer('user', {
       id: 'id',
       attributes: User.getAttributes(),

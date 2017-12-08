@@ -64,7 +64,7 @@ router.get(['/', '/find'], (req, res) => {
 
   let params = _.omit(req.query || {}, ['page']);
   if (req.user.role == 1){
-    where.customer = req.user.id;
+    params.customer = req.user.id;
   }
 
   Order.forge().orderBy('created_at', 'DESC').where(params).fetchPage({
