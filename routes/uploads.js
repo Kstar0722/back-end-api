@@ -120,7 +120,7 @@ router.post('/', (req, res) => {
     upload = _upload;
 
     return new Promise((resolve, reject) => {
-      req.file('pdf').upload(function (err, uploadedFiles){
+      req.file('pdf').upload({maxBytes: 500*1024*1024}, function (err, uploadedFiles){
         if (err) return reject(err);
         if (!uploadedFiles || !uploadedFiles[0]){
           return reject(new Error("file not uploaded"));

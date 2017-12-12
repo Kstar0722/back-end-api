@@ -151,7 +151,7 @@ router.patch(['/:id([0-9]+)', '/edit/:id([0-9]+)'], (req, res) => {
 
     order = _.pick(order, _.union(_.difference(Order.getAttributes(), ['created_at', 'updated_at', 'user']), ['id']));
 
-    return Order.forge(order).save({}, {patch: true});
+    return Order.forge(order).save();
   }).then((order) => {
     return res.json(new Serializer('order', {
       id: 'id',

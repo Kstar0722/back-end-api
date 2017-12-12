@@ -21,10 +21,12 @@ app.use(cors({
   credentials: true
 }));
 app.use(bodyParser.urlencoded({
+  limit: '500mb',
   extended: true,
   type: 'application/x-www-form-urlencoded'
 }));
 app.use(bodyParser.json({
+  limit: '500mb',
   type: 'application/*'
 }));
 app.use(require('express-pdf'));
