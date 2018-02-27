@@ -8,11 +8,12 @@ let express = require('express'),
   Info = require('../models').info,
   Upload = require('../models').upload,
   BlueprintDetails = require('../models').blueprint_details,
-  _ = require('underscore'),
+  _ = require('lodash'),
   JSONAPI = require('jsonapi-serializer'),
   Serializer = JSONAPI.Serializer,
   Deserializer = JSONAPI.Deserializer,
   randstr = require('randomstring'),
+  helper = require('../lib/helper'),
   mailgun = require('mailgun-js')({
     apiKey: process.env.MAILGUN_KEY,
     domain: 'iifym.com'
@@ -62,30 +63,35 @@ router.post(['/', '/create'], (req, res) => {
 // GET /, /find
 router.get(['/', '/find'], (req, res) => {
 
-  let params = _.omit(req.query || {}, ['page']);
   if (req.user.role == 1){
-    params.customer = req.user.id;
+    if (!req.query.filter){
+      req.query.filter = {};
+    }
+    req.query.filter.customer = req.user.id;
   }
 
-  Order.forge().orderBy('created_at', 'DESC').where(params).fetchPage({
-      page: req.query.page || 1,
-      pageSize: 20,
-      withRelated: ['user']
-    }).then((orders) => {
-      return res.json(new Serializer('order', {
-        id: 'id',
-        attributes: Order.getAttributes(),
-        user: {
-          ref: 'id',
-          attributes: User.getAttributes()
-        }
-      }).serialize(orders.toJSON()));
-    }, (err) => {
-      console.error(err);
-      return res.status(500).json({
-        message: 'Server error occurred'
-      });
+  let normalizedQuery = helper.normalizeQuery(req.query, Order.getAttributes());
+  helper.fetchPaginationData(normalizedQuery, Order, ['user']).then((orders) => {
+    return res.json(new Serializer('order', {
+      id: 'id',
+      attributes: Order.getAttributes(),
+      user: {
+        ref: 'id',
+        attributes: User.getAttributes()
+      },
+      topLevelLinks: helper.genNavLinks(helper.getHomeUrl(req)+"/orders", normalizedQuery, orders.pagination.rowCount),
+      meta: {
+        count: orders.pagination.rowCount,
+        pageCount: orders.pagination.pageCount,
+        pageSize: orders.pagination.pageSize,
+        page: orders.pagination.page
+      }
+    }).serialize(orders.toJSON()));
+  }, (err) => {
+    return res.status(500).json({
+      message: 'Server error occurred'
     });
+  });
 });
 
 // GET /count

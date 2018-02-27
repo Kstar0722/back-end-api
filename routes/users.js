@@ -2,7 +2,7 @@
 
 let express = require('express'),
   router = express.Router(),
-  _ = require('underscore'),
+  _ = require('lodash'),
   helper = require('../lib/helper'),
   User = require('../models').user,
   Role = require('../models').role,
@@ -153,13 +153,8 @@ router.get('/', (req, res) => {
     });
   }
 
-  let params = _.omit(req.query || {}, ['page']);
-
-  User.forge().orderBy('created_at', 'DESC').where(params).fetchPage({
-    page: req.query.page || 1,
-    pageSize: 20,
-    withRelated: ['role']
-  }).then((users) => {
+  let normalizedQuery = helper.normalizeQuery(req.query, User.getAttributes());
+  helper.fetchPaginationData(normalizedQuery, User, ['role']).then(users => {
     return res.json(new Serializer('user', {
       id: 'id',
       attributes: User.getAttributes(),
@@ -167,6 +162,13 @@ router.get('/', (req, res) => {
         ref: 'id',
         attributes: Role.getAttributes()
       },
+      topLevelLinks: helper.genNavLinks(helper.getHomeUrl(req)+"/users", normalizedQuery, users.pagination.rowCount),
+      meta: {
+        count: users.pagination.rowCount,
+        pageCount: users.pagination.pageCount,
+        pageSize: users.pagination.pageSize,
+        page: users.pagination.page
+      }
     }).serialize(users.toJSON()));
   }, () => {
     return res.status(500).json({
